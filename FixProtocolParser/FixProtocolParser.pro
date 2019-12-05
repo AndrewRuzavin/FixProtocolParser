@@ -1,7 +1,7 @@
 include(../config.pri)
 include(src.pri)
 
-TARGET = QtGTestTemplate
+TARGET = FixProtocolParser
 
 DEFINES += QT_DEPRECATED_WARNINGS
 

@@ -2,7 +2,7 @@ include(gtest_dependency.pri)
 include(../config.pri)
 include($${PROJECT_PATH}/src.pri)
 
-TARGET = QtGTestTemplateTest
+TARGET = FixProtocolParserTest
 
 CONFIG += thread
 
@@ -13,4 +13,3 @@ VPATH += ./src
 
 SOURCES += \
 	src/main.cpp \
-	SomeCodeTest.cpp \

@@ -1,0 +1,11 @@
+Makefile
+.stash
+.qmake
+.Release
+.Debug
+.obj
+.ilk
+.pdb
+.ilk
+.exe
+.user

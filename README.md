@@ -1,5 +1,8 @@
 # FixProtocolParser
 
+[Ссылка](https://github.com/AndrewRuzavin/FixProtocolParser/blob/master/Task/test_task.txt "") на задание.  
+[Ссылка](https://github.com/AndrewRuzavin/FixProtocolParser/blob/master/Task/file1.txt "") на входные данные.  
+
 ## Источники
 Базовое описание протокола [FIX](https://en.wikipedia.org/wiki/Financial_Information_eXchange "").  
 [Описание](https://docs.deribit.com/v2/#market-data-snapshot-full-refresh-w "") схем сообщений снапшота.  

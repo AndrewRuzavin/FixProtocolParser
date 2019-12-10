@@ -5,8 +5,7 @@ CONFIG += c++14 console
 CONFIG -= app_bundle
 CONFIG -= qt
 
-PROJECT_PATH = "../FixProtocolParser"
-PROJECT_SRC_PATH = "$${PROJECT_PATH}/src"
+PROJECT_SRC_PATH = "$${PWD}/src"
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/builds/debug

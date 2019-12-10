@@ -28,47 +28,45 @@ enum class Side {
 using OBKey = double;
 using OrderBook = std::map<OBKey, double>;
 
-class FieldInfo;
+namespace {
 
-class FieldInfoDestroyer {
-	private:
-		FieldInfo* p_instance;
-	public:
-		~FieldInfoDestroyer();
-		void initialize( FieldInfo* p );
-};
+	class FieldInfo;
 
-class FieldInfo {
-		using Tag = std::string;
-		using Tags = std::array<Tag, TAGS_SIZE>;
-		using GroupTagFollowedBy = std::vector<std::pair<Tag, Tag>>;
-	public:
-		FieldInfo( const FieldInfo& ) = delete;
-		FieldInfo& operator=( FieldInfo& ) = delete;
+	class FieldInfoDestroyer {
+		private:
+			FieldInfo* p_instance;
+		public:
+			~FieldInfoDestroyer();
+			void initialize( FieldInfo* p );
+	};
 
-		static FieldInfo& getInstance();
-		const std::string& getTag( const TagsEnum tag );
-		std::string getTagAfterGroupTag( const std::string& tag );
+	class FieldInfo {
+			using Tag = std::string;
+			using Tags = std::array<Tag, TAGS_SIZE>;
+			using GroupTagFollowedBy = std::vector<std::pair<Tag, Tag>>;
+		public:
+			FieldInfo( const FieldInfo& ) = delete;
+			FieldInfo& operator=( FieldInfo& ) = delete;
 
-	private:
-		static FieldInfo* p_instance;
-		static FieldInfoDestroyer destroyer;
-		FieldInfo() = default;
-		~FieldInfo() = default;
+			static FieldInfo& getInstance();
+			std::string getTag( const TagsEnum tag );
+			std::string getTagAfterGroupTag( const std::string& tag );
 
-		static void init();
+		private:
+			static FieldInfo* p_instance;
+			static FieldInfoDestroyer destroyer;
+			FieldInfo() = default;
+			~FieldInfo() = default;
 
-		friend class FieldInfoDestroyer;
+			static void init();
 
-		static Tags tags;
-		static GroupTagFollowedBy groupTagFollowedBy;
-};
+			friend class FieldInfoDestroyer;
 
+			static Tags tags;
+			static GroupTagFollowedBy groupTagFollowedBy;
+	};
 
-static const std::string& tag( const TagsEnum tag ) {
-	return FieldInfo::getInstance().getTag( tag );
 }
 
-static std::string tagAfterGroupTag( const std::string& tag ) {
-	return FieldInfo::getInstance().getTagAfterGroupTag( tag );
-}
+std::string tag( const TagsEnum tag );
+std::string tagAfterGroupTag( const std::string& tag );

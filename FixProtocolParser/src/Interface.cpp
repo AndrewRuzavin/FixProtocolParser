@@ -15,7 +15,9 @@ namespace Interface {
 
 	}
 
-	void Interface::outputTopBook( const OrderBook &ob, const int maxEntryOnBook ) const {
+	void Interface::outputTopBook( const OrderBook &ob, int maxEntryOnBook ) const {
+		maxSizeAdjustment( maxEntryOnBook, ob );
+
 		auto currentElem = maxEntryOnBook - 1;
 		const auto startIter = std::next( ob.rbegin(), ob.size() - maxEntryOnBook );
 
@@ -27,13 +29,21 @@ namespace Interface {
 		}
 	}
 
+	void Interface::maxSizeAdjustment( int &maxSize, const OrderBook &ob ) const {
+		if ( maxSize > ob.size() ) {
+			maxSize = ob.size();
+		}
+	}
+
 	template<class Iterator>
 		void Interface::outputeEntry( const Iterator &entry, const int currentEntry ) const {
 			std::cout << "[" << currentEntry << "] " << "price: "
 					  << entry.first << " (" << entry.second << ")\n";
 		}
 
-	void Interface::outputBottomBook( const OrderBook &ob, const int maxEntryOnBook ) const {
+	void Interface::outputBottomBook( const OrderBook &ob, int maxEntryOnBook ) const {
+		maxSizeAdjustment( maxEntryOnBook, ob );
+
 		auto currentElem = 0;
 		const auto maxIter = std::next( ob.begin(), maxEntryOnBook );
 		for ( auto entryIter = ob.begin()

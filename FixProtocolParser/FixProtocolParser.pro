@@ -8,4 +8,4 @@ DEFINES += QT_DEPRECATED_WARNINGS
 VPATH += ./src
 
 SOURCES += \
-	main.cpp \
+	main.cpp

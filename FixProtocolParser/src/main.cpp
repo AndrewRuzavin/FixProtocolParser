@@ -1,7 +1,6 @@
-#include <QCoreApplication>
+#include "FixProtocolHandler.hpp"
 
 int main(int argc, char *argv[]) {
-	QCoreApplication a(argc, argv);
-
-	return a.exec();
+	FixHandler::FixProtocolHandler handler;
+	handler.exec();
 }

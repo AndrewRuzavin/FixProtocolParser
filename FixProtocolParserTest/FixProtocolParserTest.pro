@@ -7,9 +7,10 @@ TARGET = FixProtocolParserTest
 CONFIG += thread
 
 INCLUDEPATH += \
-	$$PROJECT_SRC_PATH
+    $$PROJECT_SRC_PATH
 
 VPATH += ./src
 
 SOURCES += \
-	src/main.cpp \
+    src/main.cpp \
+    src/ParserTest.cpp

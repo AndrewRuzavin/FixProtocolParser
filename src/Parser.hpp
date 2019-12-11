@@ -14,6 +14,7 @@ namespace Parser {
 	};
 
 	struct IncrementalRefreshGroupData {
+			UpdateAction updateAction = UpdateAction::DELETE;
 			double price = 0;
 			Side side = Side::NONE;
 			double entrySize = 0;
@@ -71,9 +72,16 @@ namespace Parser {
 			std::string fullTag( const std::string &originTag ) const;
 			std::string getEndTag() const;
 			IncrementalRefreshData takeEntries() const;
-			void addEntries( const IncrementalRefreshData &entries );
-			void addToOB( const IncrementalRefreshGroupData &entry, OrderBook &ob );
+			void processEntries( const IncrementalRefreshData &entries );
+			void addEntryToOB( const IncrementalRefreshGroupData &entry );
+			template<class Lambda>
+				void entryOperationSideDepend( const IncrementalRefreshGroupData &entry, const Lambda &l );
+			void addEntryToOB( const IncrementalRefreshGroupData &entry, OrderBook &ob );
 			bool isKeyInOB( const OBKey &key, const OrderBook &ob ) const;
+			void changeOBEntry( const IncrementalRefreshGroupData &entry );
+			void changeOBEntry( const IncrementalRefreshGroupData &entry, OrderBook &ob );
+			void deleteEntryFromOB( const IncrementalRefreshGroupData &entry );
+			void deleteEntryFromOB( const IncrementalRefreshGroupData &entry, OrderBook &ob );
 			std::string takeTagValue( const std::string &tag, const Pos lastPos ) const;
 
 			std::string messages;

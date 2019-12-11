@@ -76,6 +76,7 @@ namespace Parser {
 		private:
 			void operation( T &data );
 			bool nextGroup( const std::string &tag );
+			UpdateAction takeUpdateAction() const;
 			Side takeSide() const;
 			int takeIntField( const std::string &tag ) const;
 			double takeDoubleField( const std::string &tag ) const;
@@ -99,11 +100,14 @@ namespace Parser {
 				if ( !nextGroup( tag( NUM_OF_ENTRIES ) ) ) {
 					break;
 				}
+
 				IncrementalRefreshGroupData groupData;
+				groupData.updateAction = takeUpdateAction();
 				groupData.side = takeSide();
 				groupData.price = takeDoubleField( tag( ENTRY_PRICE ) );
-				groupData.entrySize = takeDoubleField( tag( ENTRY_SIZE ) );
-
+				if ( UpdateAction::DELETE != groupData.updateAction ) {
+					groupData.entrySize = takeDoubleField( tag( ENTRY_SIZE ) );
+				}
 				data.groupData.push_back( groupData );
 			}
 		}
@@ -112,6 +116,21 @@ namespace Parser {
 		bool EntryMessageHandler<T>::nextGroup( const std::string &tag ) {
 			this->parser.findNextGroupEntries( tag );
 			return !this->parser.groupIsOver();
+		}
+
+	template<class T>
+		UpdateAction EntryMessageHandler<T>::takeUpdateAction() const {
+			const auto updateAction = takeIntField( tag( UPDATE_ACTION ) );
+
+			switch ( updateAction ) {
+				case 0:
+					return UpdateAction::NEW;
+				case 1:
+					return UpdateAction::CHANGE;
+				case 2:
+				default:
+					return UpdateAction::DELETE;
+			}
 		}
 
 	template<class T>

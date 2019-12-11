@@ -25,6 +25,12 @@ enum class Side {
 	NONE,
 };
 
+enum class UpdateAction {
+	NEW = 0,
+	CHANGE,
+	DELETE,
+};
+
 using OBKey = double;
 using OrderBook = std::map<OBKey, double>;
 

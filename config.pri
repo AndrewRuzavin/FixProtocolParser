@@ -9,7 +9,6 @@ PROJECT_SRC_PATH = "$${PWD}/src"
 
 CONFIG(debug, debug|release) {
     DESTDIR = $$PWD/builds/debug
-
     PATH_TO_INPUT_FILE = "$$PWD/Task/file1.txt"
     DEFINES += PATH_TO_INPUT_FILE=\"\\\"$${PATH_TO_INPUT_FILE}\\\"\"
 } else {

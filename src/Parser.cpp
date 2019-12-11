@@ -50,7 +50,7 @@ namespace Parser {
 			return false;
 		} else {
 			const auto entries = takeEntries();
-			addEntries( entries );
+			processEntries( entries );
 
 			return true;
 		}
@@ -140,33 +140,86 @@ namespace Parser {
 		return data;
 	}
 
-	void Parser::addEntries( const IncrementalRefreshData &entries ) {
+	void Parser::processEntries( const IncrementalRefreshData &entries ) {
 		for ( const auto &entry : entries.groupData ) {
+
+			switch ( entry.updateAction ) {
+				case UpdateAction::NEW:
+					addEntryToOB( entry );
+					break;
+				case UpdateAction::CHANGE:
+					changeOBEntry( entry );
+					break;
+				case UpdateAction::DELETE:
+				default:
+					deleteEntryFromOB( entry );
+					break;
+			}
+		}
+	}
+
+	void Parser::addEntryToOB( const IncrementalRefreshGroupData &entry ) {
+		entryOperationSideDepend( entry
+			, [&]( const auto &entry, auto &ob ) {
+					addEntryToOB( entry, ob );
+				} );
+	}
+
+	template<class Lambda>
+		void Parser::entryOperationSideDepend( const IncrementalRefreshGroupData &entry, const Lambda &l ) {
 			switch ( entry.side ) {
 				case Side::BID:
-					addToOB( entry, bidOB );
+					l( entry, bidOB );
 					break;
 				case Side::ASK:
-					addToOB( entry, askOB );
+					l( entry, askOB );
 					break;
 				default:
 					break;
 			}
 		}
-	}
 
-	void Parser::addToOB( const IncrementalRefreshGroupData &entry, OrderBook &ob ) {
-		if ( 0 == entry.entrySize ) {
-			if ( isKeyInOB( entry.price, ob ) ) {
-				ob.erase( ob.find( entry.price ) );
-			}
-		} else {
-			ob[entry.price] = entry.entrySize;
+	void Parser::addEntryToOB( const IncrementalRefreshGroupData &entry, OrderBook &ob ) {
+		if ( isKeyInOB( entry.price, ob ) ) {
+//TODO:	при попытке добавить уже существующую запись, следует выдать исключение
+			return;
 		}
+
+		ob[entry.price] = entry.entrySize;
 	}
 
 	bool Parser::isKeyInOB( const OBKey &key, const OrderBook &ob ) const {
 		return ob.end() != ob.find( key );
+	}
+
+	void Parser::changeOBEntry( const IncrementalRefreshGroupData &entry ) {
+		entryOperationSideDepend( entry
+			, [&]( const auto &entry, auto &ob ) {
+					changeOBEntry( entry, ob );
+				} );
+	}
+
+	void Parser::changeOBEntry( const IncrementalRefreshGroupData &entry, OrderBook &ob ) {
+		if ( !isKeyInOB( entry.price, ob ) ) {
+//TODO:	при попытке изменить несуществующую запись, следует выдать исключение
+			return;
+		}
+		ob[entry.price] = entry.entrySize;
+	}
+
+	void Parser::deleteEntryFromOB( const IncrementalRefreshGroupData &entry ) {
+		entryOperationSideDepend( entry
+			, [&]( const auto &entry, auto &ob ) {
+					deleteEntryFromOB( entry, ob );
+				} );
+	}
+
+	void Parser::deleteEntryFromOB( const IncrementalRefreshGroupData &entry, OrderBook &ob ) {
+		if ( !isKeyInOB( entry.price, ob ) ) {
+//TODO:	при попытке удалить несуществующую запись, следует выдать исключение
+			return;
+		}
+		ob.erase( ob.find( entry.price ) );
 	}
 
 	inline

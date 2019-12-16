@@ -13,16 +13,16 @@ namespace Parser {
 			const char* what() const _GLIBCXX_USE_NOEXCEPT override;
 	};
 
-	struct IncrementalRefreshGroupData {
+	struct EntryGroupData {
 			UpdateAction updateAction = UpdateAction::DELETE;
 			double price = 0;
 			Side side = Side::NONE;
 			double entrySize = 0;
 	};
 
-	struct IncrementalRefreshData {
-			std::string messageType;
-			std::vector<IncrementalRefreshGroupData> groupData;
+	struct EntryData {
+			MessageType messageType;
+			std::vector<EntryGroupData> groupData;
 	};
 
 	class Parser {
@@ -56,14 +56,22 @@ namespace Parser {
 			std::string takeTagValue( const std::string &tag ) const;
 			int findGroupSize( const std::string &tag ) const;
 			bool groupIsOver() const;
-			void findNextGroupEntries( const std::string &originTag );
+			void findNextGroupEntries( const std::string &originTag, const MessageType messType  );
 			std::string takeTagValueFromGroup( const std::string &tag ) const;
 			const OrderBook& getBidOB() const;
 			const OrderBook& getAskOB() const;
 
 		private:
 			bool readMessages();
-			bool handleNextMessage();
+			void readDataRequests();
+			void readSnapshots();
+			void readIncrementalRefreshes();
+			bool handleNextIncrementalRefresh();
+			template<class Lambda>
+				bool handleNextMessage( const Lambda &l );
+			void readDataRequest();
+			void readSnapshot();
+			void readIncrementalRefresh();
 			bool makeNextMessageRange();
 			PosRange findRange( const std::string &separator ) const;
 			Pos findPos( const std::string &separator, const Pos pos ) const;
@@ -71,17 +79,19 @@ namespace Parser {
 			size_t fullTagSize( const std::string &tag ) const;
 			std::string fullTag( const std::string &originTag ) const;
 			std::string getEndTag() const;
-			IncrementalRefreshData takeEntries() const;
-			void processEntries( const IncrementalRefreshData &entries );
-			void addEntryToOB( const IncrementalRefreshGroupData &entry );
+			EntryData takeDataRequest() const;
+			EntryData takeSnapshot() const;
+			EntryData takeIncrementalRefresh() const;
+			void processEntries( const EntryData &entries );
+			void addEntryToOB( const EntryGroupData &entry );
 			template<class Lambda>
-				void entryOperationSideDepend( const IncrementalRefreshGroupData &entry, const Lambda &l );
-			void addEntryToOB( const IncrementalRefreshGroupData &entry, OrderBook &ob );
+				void entryOperationSideDepend( const EntryGroupData &entry, const Lambda &l );
+			void addEntryToOB( const EntryGroupData &entry, OrderBook &ob );
 			bool isKeyInOB( const OBKey &key, const OrderBook &ob ) const;
-			void changeOBEntry( const IncrementalRefreshGroupData &entry );
-			void changeOBEntry( const IncrementalRefreshGroupData &entry, OrderBook &ob );
-			void deleteEntryFromOB( const IncrementalRefreshGroupData &entry );
-			void deleteEntryFromOB( const IncrementalRefreshGroupData &entry, OrderBook &ob );
+			void changeOBEntry( const EntryGroupData &entry );
+			void changeOBEntry( const EntryGroupData &entry, OrderBook &ob );
+			void deleteEntryFromOB( const EntryGroupData &entry );
+			void deleteEntryFromOB( const EntryGroupData &entry, OrderBook &ob );
 			std::string takeTagValue( const std::string &tag, const Pos lastPos ) const;
 
 			std::string messages;

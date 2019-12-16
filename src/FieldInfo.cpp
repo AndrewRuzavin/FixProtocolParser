@@ -30,6 +30,8 @@ namespace {
 		tags[DELIMITER] = "^";
 		tags[CHECK_SUM] = "10";
 		tags[MSG_TYPE] = "35";
+		tags[DATA_REQUEST] = "V";
+		tags[SNAPSHOT] = "W";
 		tags[INCREMENTAL_REFRESH] = "X";
 		tags[NUM_OF_ENTRIES] = "268";
 		tags[ENTRY_TYPE] = "269";
@@ -37,18 +39,19 @@ namespace {
 		tags[ENTRY_SIZE] = "271";
 		tags[UPDATE_ACTION] = "279";
 
-		groupTagFollowedBy.emplace_back( std::make_pair( "268", "279" ) );
+		groupTagFollowedBy.emplace_back( std::make_pair( std::make_pair( MessageType::W, "268" ), "269" ) );
+		groupTagFollowedBy.emplace_back( std::make_pair( std::make_pair( MessageType::X, "268" ), "279" ) );
 	}
 
 	std::string FieldInfo::getTag( const TagsEnum tag ) {
 		return tags.at( tag );
 	}
 
-	std::string FieldInfo::getTagAfterGroupTag( const std::string &tag ) {
+	std::string FieldInfo::getTagAfterGroupTag( const std::string &tag, const MessageType mt ) {
 		const auto iter = std::find_if( groupTagFollowedBy.begin()
 				, groupTagFollowedBy.end()
-				, [&tag]( const auto &val ) {
-						return val.first == tag;
+				, [&tag, &mt]( const auto &val ) {
+						return val.first == std::make_pair( mt, tag );
 					} );
 
 		return groupTagFollowedBy.end() == iter
@@ -66,7 +69,20 @@ std::string tag( const TagsEnum tag ) {
 	}
 }
 
-std::string tagAfterGroupTag( const std::string& tag ) {
-	return FieldInfo::getInstance().getTagAfterGroupTag( tag );
+std::string messTypeTag( const MessageType mt ) {
+	switch ( mt ) {
+		case MessageType::V:
+			return tag( DATA_REQUEST );
+		case MessageType::W:
+			return tag( SNAPSHOT );
+		case MessageType::X:
+			return tag( INCREMENTAL_REFRESH );
+		default:
+			return std::string();
+	}
+}
+
+std::string tagAfterGroupTag( const std::string& tag, const MessageType mt ) {
+	return FieldInfo::getInstance().getTagAfterGroupTag( tag, mt );
 }
 

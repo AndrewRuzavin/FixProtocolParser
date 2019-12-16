@@ -4,10 +4,18 @@
 #include<map>
 #include<vector>
 
+enum class MessageType {
+	V = 0,
+	W,
+	X
+};
+
 enum TagsEnum {
 	DELIMITER = 0,
 	CHECK_SUM,
 	MSG_TYPE,
+	DATA_REQUEST,
+	SNAPSHOT,
 	INCREMENTAL_REFRESH,
 	NUM_OF_ENTRIES,
 	ENTRY_TYPE,
@@ -49,14 +57,15 @@ namespace {
 	class FieldInfo {
 			using Tag = std::string;
 			using Tags = std::array<Tag, TAGS_SIZE>;
-			using GroupTagFollowedBy = std::vector<std::pair<Tag, Tag>>;
+			using MessTypeTag = std::pair<MessageType, Tag>;
+			using GroupTagFollowedBy = std::vector<std::pair<MessTypeTag, Tag>>;
 		public:
 			FieldInfo( const FieldInfo& ) = delete;
 			FieldInfo& operator=( FieldInfo& ) = delete;
 
 			static FieldInfo& getInstance();
 			std::string getTag( const TagsEnum tag );
-			std::string getTagAfterGroupTag( const std::string& tag );
+			std::string getTagAfterGroupTag( const std::string& tag, const MessageType mt );
 
 		private:
 			static FieldInfo* p_instance;
@@ -75,4 +84,5 @@ namespace {
 }
 
 std::string tag( const TagsEnum tag );
-std::string tagAfterGroupTag( const std::string& tag );
+std::string messTypeTag( const MessageType mt );
+std::string tagAfterGroupTag( const std::string& tag, const MessageType mt );

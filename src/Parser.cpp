@@ -25,7 +25,10 @@ namespace Parser {
 
 	bool Parser::exec() {
 		if ( readMessages() ) {
-			while( handleNextMessage() ) {}
+			readDataRequests();
+			readSnapshots();
+			readIncrementalRefreshes();
+
 			return true;
 		} else {
 			return false;
@@ -45,15 +48,55 @@ namespace Parser {
 		return true;
 	}
 
-	bool Parser::handleNextMessage() {
-		if ( !makeNextMessageRange() ) {
-			return false;
-		} else {
-			const auto entries = takeEntries();
-			processEntries( entries );
+	void Parser::readDataRequests() {
+		handleNextMessage( [&]() {
+				readDataRequest();
+			} );
+	}
 
-			return true;
+	void Parser::readSnapshots() {
+		handleNextMessage( [&]() {
+				readSnapshot();
+			} );
+	}
+
+	void Parser::readIncrementalRefreshes() {
+		while( handleNextIncrementalRefresh() ) {}
+	}
+
+	bool Parser::handleNextIncrementalRefresh() {
+		return handleNextMessage( [&]() {
+				readIncrementalRefresh();
+			} );
+	}
+
+	template<class Lambda>
+		bool Parser::handleNextMessage( const Lambda &l ) {
+			if ( !makeNextMessageRange() ) {
+				return false;
+			} else {
+				try {
+					l();
+				}
+				catch(...) {	//TODO: добавить обработку конкретного исключения
+					std::cerr << "";	//TODO: сформировать адекватное сообщение
+				}
+				return true;
+			}
 		}
+
+	void Parser::readDataRequest() {
+		takeDataRequest();
+	}
+
+	void Parser::readSnapshot() {
+		const auto entries = takeSnapshot();
+		processEntries( entries );
+	}
+
+	void Parser::readIncrementalRefresh() {
+		const auto entries = takeIncrementalRefresh();
+		processEntries( entries );
 	}
 
 	bool Parser::makeNextMessageRange() {
@@ -127,20 +170,46 @@ namespace Parser {
 		}
 	}
 
-	IncrementalRefreshData Parser::takeEntries() const {
-		std::unique_ptr<MessageHandler<IncrementalRefreshData>> handler
-				= std::make_unique<TypeMessageHandler<IncrementalRefreshData>>( *this );
-		handler = std::make_unique<EntryMessageHandler<IncrementalRefreshData>>( *this, std::move(handler) );
+	EntryData Parser::takeDataRequest() const {
+		std::unique_ptr<MessageHandler<EntryData>> handler
+				= std::make_unique<TypeMessageHandler<EntryData>>( *this );
+		handler = std::make_unique<EntryMessageHandler<EntryData>>( *this, std::move(handler) );
 
-		IncrementalRefreshData data;
-		data.messageType = tag( INCREMENTAL_REFRESH );
+		EntryData data;
+		data.messageType = MessageType::V;
 
 		handler->handle( tag( MSG_TYPE ), data );
 
 		return data;
 	}
 
-	void Parser::processEntries( const IncrementalRefreshData &entries ) {
+	EntryData Parser::takeSnapshot() const {
+		std::unique_ptr<MessageHandler<EntryData>> handler
+				= std::make_unique<TypeMessageHandler<EntryData>>( *this );
+		handler = std::make_unique<EntryMessageHandler<EntryData>>( *this, std::move(handler) );
+
+		EntryData data;
+		data.messageType = MessageType::W;
+
+		handler->handle( tag( MSG_TYPE ), data );
+
+		return data;
+	}
+
+	EntryData Parser::takeIncrementalRefresh() const {
+		std::unique_ptr<MessageHandler<EntryData>> handler
+				= std::make_unique<TypeMessageHandler<EntryData>>( *this );
+		handler = std::make_unique<EntryMessageHandler<EntryData>>( *this, std::move(handler) );
+
+		EntryData data;
+		data.messageType = MessageType::X;
+
+		handler->handle( tag( MSG_TYPE ), data );
+
+		return data;
+	}
+
+	void Parser::processEntries( const EntryData &entries ) {
 		for ( const auto &entry : entries.groupData ) {
 
 			switch ( entry.updateAction ) {
@@ -158,7 +227,7 @@ namespace Parser {
 		}
 	}
 
-	void Parser::addEntryToOB( const IncrementalRefreshGroupData &entry ) {
+	void Parser::addEntryToOB( const EntryGroupData &entry ) {
 		entryOperationSideDepend( entry
 			, [&]( const auto &entry, auto &ob ) {
 					addEntryToOB( entry, ob );
@@ -166,7 +235,7 @@ namespace Parser {
 	}
 
 	template<class Lambda>
-		void Parser::entryOperationSideDepend( const IncrementalRefreshGroupData &entry, const Lambda &l ) {
+		void Parser::entryOperationSideDepend( const EntryGroupData &entry, const Lambda &l ) {
 			switch ( entry.side ) {
 				case Side::BID:
 					l( entry, bidOB );
@@ -179,7 +248,7 @@ namespace Parser {
 			}
 		}
 
-	void Parser::addEntryToOB( const IncrementalRefreshGroupData &entry, OrderBook &ob ) {
+	void Parser::addEntryToOB( const EntryGroupData &entry, OrderBook &ob ) {
 		if ( isKeyInOB( entry.price, ob ) ) {
 //TODO:	при попытке добавить уже существующую запись, следует выдать исключение
 			return;
@@ -192,14 +261,14 @@ namespace Parser {
 		return ob.end() != ob.find( key );
 	}
 
-	void Parser::changeOBEntry( const IncrementalRefreshGroupData &entry ) {
+	void Parser::changeOBEntry( const EntryGroupData &entry ) {
 		entryOperationSideDepend( entry
 			, [&]( const auto &entry, auto &ob ) {
 					changeOBEntry( entry, ob );
 				} );
 	}
 
-	void Parser::changeOBEntry( const IncrementalRefreshGroupData &entry, OrderBook &ob ) {
+	void Parser::changeOBEntry( const EntryGroupData &entry, OrderBook &ob ) {
 		if ( !isKeyInOB( entry.price, ob ) ) {
 //TODO:	при попытке изменить несуществующую запись, следует выдать исключение
 			return;
@@ -207,14 +276,14 @@ namespace Parser {
 		ob[entry.price] = entry.entrySize;
 	}
 
-	void Parser::deleteEntryFromOB( const IncrementalRefreshGroupData &entry ) {
+	void Parser::deleteEntryFromOB( const EntryGroupData &entry ) {
 		entryOperationSideDepend( entry
 			, [&]( const auto &entry, auto &ob ) {
 					deleteEntryFromOB( entry, ob );
 				} );
 	}
 
-	void Parser::deleteEntryFromOB( const IncrementalRefreshGroupData &entry, OrderBook &ob ) {
+	void Parser::deleteEntryFromOB( const EntryGroupData &entry, OrderBook &ob ) {
 		if ( !isKeyInOB( entry.price, ob ) ) {
 //TODO:	при попытке удалить несуществующую запись, следует выдать исключение
 			return;
@@ -234,8 +303,8 @@ namespace Parser {
 		return groupRange.first > groupRange.second;
 	}
 
-	void Parser::findNextGroupEntries( const std::string &originTag ) {
-		const auto nextTag = tagAfterGroupTag( originTag );
+	void Parser::findNextGroupEntries( const std::string &originTag, const MessageType messType ) {
+		const auto nextTag = tagAfterGroupTag( originTag, messType );
 		if ( !groupIsOver()
 				&& !nextTag.empty() ) {
 

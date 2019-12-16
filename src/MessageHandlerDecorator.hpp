@@ -42,8 +42,8 @@ namespace Parser {
 			bool handle( const std::string &tag, T &data ) override;
 
 		private:
-			bool operation( const std::string &tag, T &data );
-
+			bool operation( const std::string &tag, const T &data );
+			bool checkMessageType( const std::string &messTypeStr, const MessageType data );
 			HandlerP handler;
 	};
 
@@ -56,9 +56,14 @@ namespace Parser {
 		}
 
 	template<class T>
-		bool TypeMessageHandler<T>::operation( const std::string &tag, T &data ) {
+		bool TypeMessageHandler<T>::operation( const std::string &tag, const T &data ) {
 			const auto val = this->parser.takeTagValue( tag );
-			return val == data.messageType;
+			return checkMessageType( val, data.messageType );
+		}
+
+	template<class T>
+		bool TypeMessageHandler<T>::checkMessageType( const std::string &messTypeStr, const MessageType messageType ) {
+			return messTypeTag( messageType ) == messTypeStr;
 		}
 
 
@@ -75,7 +80,8 @@ namespace Parser {
 
 		private:
 			void operation( T &data );
-			bool nextGroup( const std::string &tag );
+			bool nextGroup( const std::string &tag, const MessageType messType  );
+			UpdateAction takeUpdateAction( const MessageType messType ) const;
 			UpdateAction takeUpdateAction() const;
 			Side takeSide() const;
 			int takeIntField( const std::string &tag ) const;
@@ -97,12 +103,15 @@ namespace Parser {
 		void EntryMessageHandler<T>::operation( T &data ) {
 			const auto numOfEntries = this->parser.findGroupSize( tag( NUM_OF_ENTRIES ) );
 			for ( auto i = 0; i < numOfEntries; ++i ) {
-				if ( !nextGroup( tag( NUM_OF_ENTRIES ) ) ) {
+				if ( i == 2281 ) {
+					volatile auto qwe = 0;
+				}
+				if ( !nextGroup( tag( NUM_OF_ENTRIES ), data.messageType ) ) {
 					break;
 				}
 
-				IncrementalRefreshGroupData groupData;
-				groupData.updateAction = takeUpdateAction();
+				EntryGroupData groupData;
+				groupData.updateAction = takeUpdateAction( data.messageType );
 				groupData.side = takeSide();
 				groupData.price = takeDoubleField( tag( ENTRY_PRICE ) );
 				if ( UpdateAction::DELETE != groupData.updateAction ) {
@@ -113,25 +122,37 @@ namespace Parser {
 		}
 
 	template<class T>
-		bool EntryMessageHandler<T>::nextGroup( const std::string &tag ) {
-			this->parser.findNextGroupEntries( tag );
+		bool EntryMessageHandler<T>::nextGroup( const std::string &tag, const MessageType messType ) {
+			this->parser.findNextGroupEntries( tag, messType );
 			return !this->parser.groupIsOver();
 		}
 
 	template<class T>
-		UpdateAction EntryMessageHandler<T>::takeUpdateAction() const {
-			const auto updateAction = takeIntField( tag( UPDATE_ACTION ) );
-
-			switch ( updateAction ) {
-				case 0:
-					return UpdateAction::NEW;
-				case 1:
-					return UpdateAction::CHANGE;
-				case 2:
+		UpdateAction EntryMessageHandler<T>::takeUpdateAction( const MessageType messType ) const {
+			switch ( messType ) {
+				case MessageType::X:
+					return takeUpdateAction();
+				case MessageType::V:
+				case MessageType::W:
 				default:
-					return UpdateAction::DELETE;
+					return UpdateAction::NEW;
 			}
 		}
+
+		template<class T>
+			UpdateAction EntryMessageHandler<T>::takeUpdateAction() const {
+				const auto updateAction = takeIntField( tag( UPDATE_ACTION ) );
+
+				switch ( updateAction ) {
+					case 0:
+						return UpdateAction::NEW;
+					case 1:
+						return UpdateAction::CHANGE;
+					case 2:
+					default:
+						return UpdateAction::DELETE;
+				}
+			}
 
 	template<class T>
 		Side EntryMessageHandler<T>::takeSide() const {

@@ -103,9 +103,6 @@ namespace Parser {
 		void EntryMessageHandler<T>::operation( T &data ) {
 			const auto numOfEntries = this->parser.findGroupSize( tag( NUM_OF_ENTRIES ) );
 			for ( auto i = 0; i < numOfEntries; ++i ) {
-				if ( i == 2281 ) {
-					volatile auto qwe = 0;
-				}
 				if ( !nextGroup( tag( NUM_OF_ENTRIES ), data.messageType ) ) {
 					break;
 				}

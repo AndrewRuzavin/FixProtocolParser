@@ -12,7 +12,6 @@ namespace Interface {
 		outputDelimiter();
 		outputBottomBook( bidOB, maxEntryOnBook );
 		outputTotalSize( "BUY", bidOB.size() );
-
 	}
 
 	void Interface::outputTopBook( const OrderBook &ob, int maxEntryOnBook ) const {
@@ -21,9 +20,9 @@ namespace Interface {
 		auto currentElem = maxEntryOnBook - 1;
 		const auto startIter = std::next( ob.rbegin(), ob.size() - maxEntryOnBook );
 
-		for ( auto entryIter = startIter
-				; entryIter != ob.rend()
-				; ++entryIter, --currentElem ) {
+		for ( auto entryIter = startIter;
+				entryIter != ob.rend();
+				++entryIter, --currentElem ) {
 
 			outputeEntry( *entryIter, currentElem );
 		}
@@ -45,11 +44,11 @@ namespace Interface {
 		maxSizeAdjustment( maxEntryOnBook, ob );
 
 		auto currentElem = 0;
-		const auto maxIter = std::next( ob.begin(), maxEntryOnBook );
-		for ( auto entryIter = ob.begin()
-				; ( entryIter != ob.end() )
-					&& entryIter != maxIter
-				; ++entryIter, ++currentElem ) {
+		const auto maxIter = std::next( ob.rbegin(), maxEntryOnBook );
+		for ( auto entryIter = ob.rbegin();
+				( entryIter != ob.rend() )
+					&& entryIter != maxIter;
+				++entryIter, ++currentElem ) {
 
 			outputeEntry( *entryIter, currentElem );
 		}
